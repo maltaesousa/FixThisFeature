@@ -15,7 +15,7 @@ class SendPointTool(QgsMapToolIdentifyFeature):
 
     def canvasReleaseEvent(self, e):
         self.clickedPoint = self.toMapCoordinates( e.pos() )
-        results = self.identify(e.x(), e.y(), self.TopDownStopAtFirst, self.VectorLayer)
+        results = self.identify(e.x(), e.y(), self.LayerSelection, self.VectorLayer)
         if len(results) > 0:
             self.featureClicked.emit(self.clickedPoint, results[0].mLayer, results[0].mFeature)
         else:
