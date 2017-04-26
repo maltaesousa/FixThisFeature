@@ -40,7 +40,7 @@ class FixThisFeature:
         # Save reference to the QGIS interface
         self.iface = iface
         # saving parameters
-        self.editLayerName = "qg_issue"
+        self.editLayerName = "fix_issue"
         self.featureLayerAttribute = "feature_layer"
         self.featureIdAttribute = "feature_id"
         self.featureDescriptionAttribute = "description"

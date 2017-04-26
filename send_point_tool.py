@@ -3,7 +3,6 @@ from qgis.gui import QgsMapToolIdentifyFeature
 from qgis.core import QgsPoint
 from qgis.utils import iface
 
-
 class SendPointTool(QgsMapToolIdentifyFeature):
     featureClicked = pyqtSignal( ['QgsPoint', 'QgsVectorLayer', 'QgsFeature'] )
     voidClicked = pyqtSignal( 'QgsPoint' )
