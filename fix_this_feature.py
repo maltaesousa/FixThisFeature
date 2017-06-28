@@ -4,6 +4,9 @@
  FixThisFeature
                                   A QGIS plugin
  Creates a point geometry reprensenting an issue on a map.
+ 
+            /!\  Configure this plugin with the config.py file. /!\ 
+
                               -------------------
         begin                : 2017-04-06
         git sha              : $Format:%H$
@@ -27,6 +30,7 @@ from fix_this_feature_dialog import FixThisFeatureDialog
 from send_point_tool import SendPointTool
 import os.path
 import resources, resources_rc
+import config
 
 class FixThisFeature:
     def __init__(self, iface):
@@ -39,11 +43,6 @@ class FixThisFeature:
         """
         # Save reference to the QGIS interface
         self.iface = iface
-        # saving parameters
-        self.editLayerName = "fix_issue"
-        self.featureLayerAttribute = "feature_layer"
-        self.featureIdAttribute = "feature_id"
-        self.descriptionAttribute = "description"
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
@@ -144,9 +143,9 @@ class FixThisFeature:
         # Create the dialog (after translation) and keep reference
         self.dlg = FixThisFeatureDialog()
 
-        self.dlg.featureIdField = self.dlg.findChild(QLineEdit, self.featureIdAttribute)
-        self.dlg.featureLayerField = self.dlg.findChild(QComboBox, self.featureLayerAttribute)
-        self.dlg.descriptionField = self.dlg.findChild(QPlainTextEdit, self.descriptionAttribute)
+        self.dlg.featureIdField = self.dlg.findChild(QLineEdit, config.featureIdAttribute)
+        self.dlg.featureLayerField = self.dlg.findChild(QComboBox, config.featureLayerAttribute)
+        self.dlg.descriptionField = self.dlg.findChild(QPlainTextEdit, config.descriptionAttribute)
 
 
         icon = QIcon(icon_path)
@@ -174,11 +173,11 @@ class FixThisFeature:
 
 
     def toggle(self):
-        """Toggles the button to enabled if current layer URI matches editLayerName"""
+        """Toggles the button to enabled if current layer URI matches editTableName"""
         layer = self.canvas.currentLayer()
         if layer <> None:
             currentURI = layer.dataProvider().dataSourceUri()
-            if self.editLayerName in currentURI:
+            if config.editTableName in currentURI:
                 if layer.isEditable():
                     self.actions[0].setEnabled(True)
                     layer.editingStopped.connect(self.toggle)
@@ -274,16 +273,21 @@ class FixThisFeature:
             # Set attributes to the new feature
             try:
                 newFeature.setAttribute(
-                    self.featureIdAttribute,
+                    config.featureIdAttribute,
                     self.dlg.featureIdField.text())
+                newFeature.setAttribute(
+                    config.featureLayerAttribute,
+                    self.dlg.featureLayerField.currentText())
+                newFeature.setAttribute(
+                    config.descriptionAttribute,
+                    self.dlg.descriptionField.toPlainText())
 
-                newFeature.setAttribute(self.featureLayerAttribute, self.dlg.featureLayerField.currentText())
-                newFeature.setAttribute(self.descriptionAttribute, self.dlg.descriptionField.toPlainText())
                 # Assign the point geometry (clicked point)
                 newFeature.setGeometry(QgsGeometry.fromPoint(self.newPoint))
                 # TODO check if everything went ok
                 (res, outFeats) = layer.dataProvider().addFeatures([newFeature])
             except Exception as e:
                 logging.error(traceback.format_exc())
-            self.dlg.featureIdField.clear()
-            self.canvas.refresh()
+        self.dlg.featureIdField.clear()
+        self.dlg.featureLayerField.setCurrentIndex(0)
+        self.canvas.refresh()
