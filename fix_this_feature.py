@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon
+from PyQt4.QtGui import QAction, QIcon, QLineEdit, QComboBox, QPlainTextEdit
 from qgis.core import QgsFeature, QgsGeometry
 from fix_this_feature_dialog import FixThisFeatureDialog
 from send_point_tool import SendPointTool
@@ -144,9 +144,9 @@ class FixThisFeature:
         # Create the dialog (after translation) and keep reference
         self.dlg = FixThisFeatureDialog()
 
-        self.dlg.featureId = self.dlg.findChild(QtGui.QLineEdit,self.featureIdAttribute)
-        self.dlg.featureLayer = self.dlg.findChild(QtGui.QComboBox,self.featureLayerAttribute)
-        self.dlg.description = self.dlg.findChild(QtGui.QPlainTextEdit,self.featureLayerAttribute)
+        self.dlg.featureIdField = self.dlg.findChild(QLineEdit, self.featureIdAttribute)
+        self.dlg.featureLayerField = self.dlg.findChild(QComboBox, self.featureLayerAttribute)
+        self.dlg.descriptionField = self.dlg.findChild(QPlainTextEdit, self.descriptionAttribute)
 
 
         icon = QIcon(icon_path)
@@ -215,12 +215,17 @@ class FixThisFeature:
             featureCilcked = args[1]
 
             # inserts the first field value, supposed to be the id
-            self.dlg.featureId.insert(str(featureCilcked[0]))
+            self.dlg.featureIdField.insert(str(featureCilcked[0]))
 
-            index = self.dlg.featureLayer.findText(layerCilcked)
-            self.dlg.featureLayer.setCurrentIndex(index)
-            self.dlg.featureLayer.setEnabled(False)
+            index = self.dlg.featureLayerField.findText(layerCilcked)
+            self.dlg.featureLayerField.setCurrentIndex(index)
+            self.dlg.featureLayerField.setEnabled(False)
             self.dlg.toolButton.setEnabled(True)
+
+            # Sets focus to the description widget in dialog
+            self.dlg.descriptionField.setFocus(True)
+            self.dlg.descriptionField.selectAll()
+
         self.saveData()
 
 
@@ -247,12 +252,12 @@ class FixThisFeature:
 
     def run(self):
         """Run method that performs all the real work"""
-        # Getting all the layers into the self.dlg.featureLayer comboBox
+        # Getting all the layers into the self.dlg.featureLayerField comboBox
         layers = self.iface.legendInterface().layers()
         layer_set = set([])
         for layer in layers:
             layer_set.add(layer.name())
-        self.dlg.featureLayer.addItems(list(layer_set))
+        self.dlg.featureLayerField.addItems(list(layer_set))
         # connecting the pickup tool to the button
         self.dlg.toolButton.clicked.connect(self.selectFeature)
         self.selectFeature()
@@ -262,9 +267,6 @@ class FixThisFeature:
         """Saves the data"""
         # Run the dialog event loop
         result = self.dlg.exec_()
-        # Sets focus to the only editable widget in dialog
-        self.dlg.description.setFocus(True)
-        self.dlg.description.selectAll()
         # See if OK was pressed
         if result:
             layer = self.canvas.currentLayer()
@@ -273,15 +275,15 @@ class FixThisFeature:
             try:
                 newFeature.setAttribute(
                     self.featureIdAttribute,
-                    self.dlg.featureId.text())
+                    self.dlg.featureIdField.text())
 
-                newFeature.setAttribute(self.featureLayerAttribute, self.dlg.featureLayer.currentText())
-                newFeature.setAttribute(self.descriptionAttribute, self.dlg.description.toPlainText())
+                newFeature.setAttribute(self.featureLayerAttribute, self.dlg.featureLayerField.currentText())
+                newFeature.setAttribute(self.descriptionAttribute, self.dlg.descriptionField.toPlainText())
                 # Assign the point geometry (clicked point)
                 newFeature.setGeometry(QgsGeometry.fromPoint(self.newPoint))
                 # TODO check if everything went ok
                 (res, outFeats) = layer.dataProvider().addFeatures([newFeature])
             except Exception as e:
                 logging.error(traceback.format_exc())
-            self.dlg.featureId.clear()
+            self.dlg.featureIdField.clear()
             self.canvas.refresh()

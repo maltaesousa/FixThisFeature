@@ -63,7 +63,7 @@
      <item row="1" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
-        <widget class="QComboBox" name="comboBox">
+        <widget class="QComboBox" name="feature_layer">
          <property name="editable">
           <bool>false</bool>
          </property>
@@ -75,7 +75,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="comboBox_2"/>
+        <widget class="QComboBox" name="status"/>
        </item>
       </layout>
      </item>
@@ -87,7 +87,7 @@
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
-      <widget class="QPlainTextEdit" name="plainTextEdit"/>
+      <widget class="QPlainTextEdit" name="description"/>
      </item>
     </layout>
    </item>
