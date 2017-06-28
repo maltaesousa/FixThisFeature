@@ -59,7 +59,6 @@ class FixThisFeature:
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
 
-
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&FixThisFeature')
@@ -71,7 +70,6 @@ class FixThisFeature:
         self.iface.currentLayerChanged.connect(self.toggle)
         
         self.canvas = self.iface.mapCanvas()
-
 
 
     # noinspection PyMethodMayBeStatic
@@ -143,10 +141,10 @@ class FixThisFeature:
         # Create the dialog (after translation) and keep reference
         self.dlg = FixThisFeatureDialog()
 
+        # References the dialog inputs with the configured fields
         self.dlg.featureIdField = self.dlg.findChild(QLineEdit, config.featureIdAttribute)
         self.dlg.featureLayerField = self.dlg.findChild(QComboBox, config.featureLayerAttribute)
         self.dlg.descriptionField = self.dlg.findChild(QPlainTextEdit, config.descriptionAttribute)
-
 
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
@@ -170,6 +168,40 @@ class FixThisFeature:
         self.actions.append(action)
 
         return action
+
+
+    def initGui(self):
+        """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        icon_path = ':/plugins/FixThisFeature/icon.svg'
+        self.add_action(
+            icon_path,
+            text=self.tr(u'Report an issue'),
+            callback=self.run,
+            parent=self.iface.mainWindow())
+
+
+    def unload(self):
+        """Removes the plugin menu item and icon from QGIS GUI."""
+        self.iface.currentLayerChanged.disconnect(self.toggle)
+        for action in self.actions:
+            self.iface.removePluginMenu(
+                self.tr(u'&FixThisFeature'),
+                action)
+            self.iface.removeToolBarIcon(action)
+        del self.toolbar
+
+
+    def run(self):
+        """Run method that performs all the real work"""
+        # Getting all the layers into the self.dlg.featureLayerField comboBox
+        layers = self.iface.legendInterface().layers()
+        layer_set = set([])
+        for layer in layers:
+            layer_set.add(layer.name())
+        self.dlg.featureLayerField.addItems(list(layer_set))
+        # connecting the pickup tool to the button
+        self.dlg.toolButton.clicked.connect(self.selectFeature)
+        self.selectFeature()
 
 
     def toggle(self):
@@ -207,13 +239,23 @@ class FixThisFeature:
 
 
     def fillDialog(self, pt, *args):
-        """Fills the dialog with parameters found by the clicking tool in selectFeature"""
+        """Fills the dialog with parameters found by the clicking tool in selectFeature
+
+        :param pt: The point clicked on the map
+        :type pt: QgsPointXY
+
+        :param *args: Variable length argument list where, if the user clicks on a feature
+            [0] contains a QgsVectorLayer object
+            [1] contains a QgsFeature object
+        :type *args: list
+        """
         self.newPoint = pt
         if len(args) == 2:
             layerCilcked = args[0].name()
             featureCilcked = args[1]
 
-            # inserts the first field value, supposed to be the id
+            # inserts the first field value found on the clicked feature
+            # supposed to be the id
             self.dlg.featureIdField.insert(str(featureCilcked[0]))
 
             index = self.dlg.featureLayerField.findText(layerCilcked)
@@ -226,40 +268,6 @@ class FixThisFeature:
             self.dlg.descriptionField.selectAll()
 
         self.saveData()
-
-
-    def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-        icon_path = ':/plugins/FixThisFeature/icon.svg'
-        self.add_action(
-            icon_path,
-            text=self.tr(u'Report an issue'),
-            callback=self.run,
-            parent=self.iface.mainWindow())
-
-
-    def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
-        self.iface.currentLayerChanged.disconnect(self.toggle)
-        for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&FixThisFeature'),
-                action)
-            self.iface.removeToolBarIcon(action)
-        del self.toolbar
-
-
-    def run(self):
-        """Run method that performs all the real work"""
-        # Getting all the layers into the self.dlg.featureLayerField comboBox
-        layers = self.iface.legendInterface().layers()
-        layer_set = set([])
-        for layer in layers:
-            layer_set.add(layer.name())
-        self.dlg.featureLayerField.addItems(list(layer_set))
-        # connecting the pickup tool to the button
-        self.dlg.toolButton.clicked.connect(self.selectFeature)
-        self.selectFeature()
 
 
     def saveData(self):
