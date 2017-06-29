@@ -66,10 +66,11 @@ class FixThisFeature:
         self.toolbar = self.iface.addToolBar(u'FixThisFeature')
         self.toolbar.setObjectName(u'FixThisFeature')
         
+        self.canvas = self.iface.mapCanvas()
+        
         # Connect to signals for button behaviour
         self.iface.currentLayerChanged.connect(self.toggle)
-        
-        self.canvas = self.iface.mapCanvas()
+        self.canvas.currentLayer()
 
 
     # noinspection PyMethodMayBeStatic
@@ -198,6 +199,9 @@ class FixThisFeature:
         layer_set = set([])
         for layer in layers:
             layer_set.add(layer.name())
+            layerURI = layer.dataProvider().dataSourceUri()
+            if config.editTableName in layerURI:
+                layer.editingStarted.connect(self.toggle)
         self.dlg.featureLayerField.addItems(list(layer_set))
         # connecting the pickup tool to the button
         self.dlg.toolButton.clicked.connect(self.selectFeature)
